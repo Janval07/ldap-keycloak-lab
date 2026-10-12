@@ -1,17 +1,24 @@
 services:
   openldap:
-    image: osixia/openldap:1.5.0
+    build: ./ldap
     container_name: openldap
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     environment:
       LDAP_ORGANISATION: "Example Corp"
       LDAP_DOMAIN: "example.com"
       LDAP_ADMIN_PASSWORD: "adminpassword"
+      LDAP_TLS: "true"
+      LDAP_TLS_VERIFY_CLIENT: "never"
+      LDAP_LOG_LEVEL: "256"
     ports:
       - "389:389"
       - "636:636"
     volumes:
       - ldap_data:/var/lib/ldap
       - ldap_config:/etc/ldap/slapd.d
+      - ldap_certs:/container/service/slapd/assets/certs
     networks: [auth-network]
 
   phpldapadmin:
@@ -50,8 +57,8 @@ services:
       KC_HTTP_PORT: 8080
       KC_HOSTNAME: http://localhost:8081
       KC_HOSTNAME_STRICT: "false"
-    ports:
-      - "8081:8080"
+    # ports:
+    #   - "8081:8080"
     volumes:
       - ./keycloak/import:/opt/keycloak/data/import:ro
     depends_on: [postgres, openldap]
@@ -70,9 +77,22 @@ services:
     depends_on: [keycloak]
     networks: [auth-network]
 
+  keycloak-proxy:
+    build: ./keycloak-proxy
+    container_name: keycloak-proxy
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    depends_on:
+      - keycloak
+    ports:
+      - "8081:80"
+    networks: [auth-network]
+
 volumes:
   ldap_data:
   ldap_config:
+  ldap_certs:
   keycloak_db:
 
 networks:
