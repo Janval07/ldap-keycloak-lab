@@ -1,7 +1,7 @@
 import os
 import httpx
 from typing import Annotated
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from jose import jwt, JWTError
 
@@ -23,6 +23,28 @@ app=FastAPI(title="LDAP + OAuth 2.0 / OIDC API",version="2.0.0",
     docs_url="/docs" if ENABLE_DOCS else None,
     redoc_url="/redoc" if ENABLE_DOCS else None,
     openapi_url="/openapi.json" if ENABLE_DOCS else None)
+
+SECURITY_HEADERS={
+    "Strict-Transport-Security":"max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options":"nosniff",
+    "X-Frame-Options":"DENY",
+    "Referrer-Policy":"no-referrer",
+    "Permissions-Policy":"camera=(), microphone=(), geolocation=()",
+    "X-Permitted-Cross-Domain-Policies":"none",
+    "Cross-Origin-Opener-Policy":"same-origin",
+    "Cross-Origin-Embedder-Policy":"require-corp",
+    "Cross-Origin-Resource-Policy":"same-site",
+}
+# CSP estricta (solo JSON). Con ENABLE_DOCS=true se omite para que Swagger UI cargue.
+if not ENABLE_DOCS:
+    SECURITY_HEADERS["Content-Security-Policy"]="default-src 'none'; frame-ancestors 'none'"
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response=await call_next(request)
+    for name,value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name,value)
+    return response
 
 @app.get("/health")
 def health(): return {"status":"ok"}
