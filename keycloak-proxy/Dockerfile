@@ -1,4 +1,4 @@
-FROM nginx:1.27-alpine
+FROM nginx:1.30-alpine
 RUN apk add --no-cache fail2ban bash iptables iproute2
 
 COPY nginx.conf /etc/nginx/nginx.conf
