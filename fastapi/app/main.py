@@ -17,7 +17,12 @@ oauth2_scheme=OAuth2AuthorizationCodeBearer(
     tokenUrl=f"{ISSUER}/protocol/openid-connect/token",
     scopes={"openid":"OpenID Connect identity"},
 )
-app=FastAPI(title="LDAP + OAuth 2.0 / OIDC API",version="2.0.0")
+# Documentacion interactiva apagada por defecto; solo en desarrollo con ENABLE_DOCS=true.
+ENABLE_DOCS=os.getenv("ENABLE_DOCS","false").lower()=="true"
+app=FastAPI(title="LDAP + OAuth 2.0 / OIDC API",version="2.0.0",
+    docs_url="/docs" if ENABLE_DOCS else None,
+    redoc_url="/redoc" if ENABLE_DOCS else None,
+    openapi_url="/openapi.json" if ENABLE_DOCS else None)
 
 @app.get("/health")
 def health(): return {"status":"ok"}
